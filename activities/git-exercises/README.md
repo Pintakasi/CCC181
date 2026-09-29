@@ -1,8 +1,8 @@
 # Git Exercises
 
 **Course:** CCC181  
-**Student Name:** <DIZON>, <VINCE RYAN>  
-**Student ID:** <20242127>
+**Student Name:** DIZON, VINCE RYAN P.  
+**Student ID:** 20242127
 
 ## Activity Description
 
