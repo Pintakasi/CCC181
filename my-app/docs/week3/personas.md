@@ -61,6 +61,7 @@ Rey needs his cellphone repaired, but he doesn't trust local repair shops in Ili
 |  Check how many people are in the current queue | My Place | FR-01 |
 | Join the queue and receive a ticked ID | My place | FR-02 |
 | Show waiting list in order | Staff Dashboard | FR-03 |
+| Calls next/Update status | Staff Dashboard | FR-04 |
 
 ### What this means for my interface
 
