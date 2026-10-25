@@ -4,7 +4,7 @@ Run it with:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 """
-from flask import Flask, abort, render_template, request, url_for, flash
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 app = Flask(__name__)
 app.secret_key = "dev-only-change-me"
@@ -23,20 +23,13 @@ SERVICES = [
     {"id": 9, "name": "Motherboard Repair"},
 ]
 
-# Each ticket: number, name, email, service_id, status
+# Each ticket: number, contact, service_id, status
 # status is one of: waiting, called, served, no-show
 TICKETS = [
-    {"ticket_id": 1, "name": "Theo", "Contact No.": "09099143656", "service_id": 2, "status": "waiting"},
-    {"ticket_id": 2, "name": "Jian", "Contact No.": "09353660678", "service_id": 9, "status": "called"},
-    {"ticket_id": 3, "name": "Rey", "Contact No.": "09353560634", "service_id": 1, "status": "called"},
+    {"number": 1, "contact": "09099143656", "service_id": 2, "status": "waiting"},
+    {"number": 2, "contact": "09353660678", "service_id": 9, "status": "called"},
+    {"number": 3, "contact": "09353560634", "service_id": 1, "status": "called"},
 ]
-
-
-def get_ticket_by_id(ticket_id):
-    for ticket in TICKETS:
-        if ticket["ticket_id"] == ticket_id:
-            return ticket
-    return None
 
 
 @app.route("/")
@@ -46,12 +39,29 @@ def index():
     return render_template("index.html", name="Rey", tickets=TICKETS)
 
 
-@app.route("/queue/<int:ticket_id>")
+@app.get("/queue/<int:ticket_id>")
 def ticket(ticket_id):
-    ticket_data = get_ticket_by_id(ticket_id)
-    if ticket_data is None:
+    t = next((t for t in TICKETS if t["number"] == ticket_id), None)
+    if t is None:
         abort(404)
-    return render_template("ticket.html", ticket=ticket_data)
+    ahead = [
+        x for x in TICKETS
+        if x["service_id"] == t["service_id"]
+        and x["status"] == "waiting"
+        and x["number"] < t["number"]
+    ]
+    service = next(s for s in SERVICES if s["id"] == t["service_id"])
+    return render_template("ticket.html", ticket=t, service=service, position=len(ahead))
+
+
+@app.post("/queue/<int:ticket_id>/leave")
+def leave_queue(ticket_id):
+    t = next((t for t in TICKETS if t["number"] == ticket_id), None)
+    if t is None:
+        abort(404)
+    t["status"] = "no-show"
+    flash("You have left the queue.", "success")
+    return redirect(url_for("index"))
 
 
 @app.route("/hello")
@@ -96,9 +106,13 @@ def join():
             flash("Please fix the highlighted fields.", "danger")
         return render_template("join.html", services=SERVICES, form=form, errors=errors), 400
 
-    number = TICKETS[-1]["number"] + 1 if TICKETS else 1
-    TICKETS.append({"number": number, "name": name, "email": email,
-                    "service_id": service_id, "status": "waiting"})
+    number = max((ticket["number"] for ticket in TICKETS), default=0) + 1
+    TICKETS.append({
+        "number": number,
+        "contact": contact,
+        "service_id": service_id,
+        "status": "waiting",
+    })
     flash(f"You joined the queue. Your ticket is #{number}.", "success")
     return redirect(url_for("ticket", ticket_id=number))
 
