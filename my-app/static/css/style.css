@@ -32,6 +32,10 @@ main {
 
 h2 { color: var(--teal); }
 
+.staff-queue-table {
+  min-width: 700px;
+}
+
 .queue-position-circle {
   width: min(12rem, 60vw);
   aspect-ratio: 1;

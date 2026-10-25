@@ -23,12 +23,12 @@ SERVICES = [
     {"id": 9, "name": "Motherboard Repair"},
 ]
 
-# Each ticket: number, contact, service_id, status
+# Each ticket: number, name, contact, service_id, status
 # status is one of: waiting, called, served, no-show
 TICKETS = [
-    {"number": 1, "contact": "09099143656", "service_id": 2, "status": "waiting"},
-    {"number": 2, "contact": "09353660678", "service_id": 9, "status": "called"},
-    {"number": 3, "contact": "09353560634", "service_id": 1, "status": "called"},
+    {"number": 1, "name": "Theo", "contact": "09099143656", "service_id": 2, "status": "waiting"},
+    {"number": 2, "name": "Jian", "contact": "09353660678", "service_id": 9, "status": "called"},
+    {"number": 3, "name": "Rey", "contact": "09353560634", "service_id": 1, "status": "called"},
 ]
 
 
@@ -83,10 +83,13 @@ def join_form():
 @app.post("/join")
 def join():
     form = request.form
+    name = form.get("name", "").strip()
     contact = form.get("contact", "")
     service_id = form.get("service_id", type=int)
 
     errors = {}
+    if not name:
+        errors["name"] = "Enter your name."
     if not (
         len(contact) == 11
         and contact.startswith("09")
@@ -109,6 +112,7 @@ def join():
     number = max((ticket["number"] for ticket in TICKETS), default=0) + 1
     TICKETS.append({
         "number": number,
+        "name": name,
         "contact": contact,
         "service_id": service_id,
         "status": "waiting",
@@ -116,6 +120,49 @@ def join():
     flash(f"You joined the queue. Your ticket is #{number}.", "success")
     return redirect(url_for("ticket", ticket_id=number))
 
-@app.route("/staff")
+@app.get("/staff")
 def staff_dashboard():
-    return render_template("staff.html")
+    service_id = request.args.get("service_id", type=int)
+    service_ids = {service["id"] for service in SERVICES}
+    if service_id is not None and service_id not in service_ids:
+        abort(404)
+
+    queue = sorted(
+        (ticket for ticket in TICKETS if ticket["status"] in ("waiting", "called")),
+        key=lambda ticket: ticket["number"],
+    )
+    if service_id is not None:
+        queue = [ticket for ticket in queue if ticket["service_id"] == service_id]
+
+    waiting_by_service = {
+        service["id"]: sum(
+            ticket["service_id"] == service["id"] and ticket["status"] == "waiting"
+            for ticket in TICKETS
+        )
+        for service in SERVICES
+    }
+    names = {service["id"]: service["name"] for service in SERVICES}
+    next_ticket = next((ticket for ticket in queue if ticket["status"] == "waiting"), None)
+    return render_template(
+        "staff.html",
+        queue=queue,
+        services=SERVICES,
+        names=names,
+        selected=service_id,
+        next_ticket=next_ticket,
+        waiting_by_service=waiting_by_service,
+    )
+
+
+@app.post("/staff/tickets/<int:ticket_id>/<action>")
+def staff_action(ticket_id, action):
+    new_status = {"call": "called", "serve": "served", "no-show": "no-show"}.get(action)
+    ticket_data = next((ticket for ticket in TICKETS if ticket["number"] == ticket_id), None)
+    if ticket_data is None or new_status is None:
+        abort(404)
+
+    ticket_data["status"] = new_status
+    flash(f"Ticket #{ticket_id} marked {new_status}.", "info")
+    service_id = request.form.get("service_id", type=int)
+    redirect_args = {"service_id": service_id} if service_id is not None else {}
+    return redirect(url_for("staff_dashboard", **redirect_args))

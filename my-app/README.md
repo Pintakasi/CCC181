@@ -14,7 +14,8 @@ my-app/
 ├── templates/          # Jinja2 HTML files for render_template()
 │   ├── base.html       # shared layout
 │   ├── index.html      # home page
-│   └── ticket.html     # page for /queue/<ticket_id>
+│   ├── ticket.html     # page for /queue/<ticket_id>
+│   └── staff.html      # staff queue dashboard
 └── static/             # served at /static/...
     ├── css/style.css
     └── js/main.js
@@ -26,9 +27,14 @@ my-app/
 |---|---|---|
 | `/` | `index()` | "Hello, Ana!" and a list of tickets, rendered with `index.html` |
 | `/queue/<int:ticket_id>` | `ticket()` | A page for that ticket, e.g. `/queue/12` |
+| `/staff` | `staff_dashboard()` | Filterable staff queue dashboard |
+| `/staff/tickets/<ticket_id>/<action>` | `staff_action()` | POST actions to call, serve or mark no-show |
 | `/hello` | `hello()` | The plain text "Hello, CCC181!" |
 
 Try `/queue/abc`: the `int` converter only accepts numbers, so Flask returns 404.
+
+The staff dashboard is currently open and has no login; do not expose it publicly
+until staff authentication is added.
 
 ## 1. Set up the Python environment
 
