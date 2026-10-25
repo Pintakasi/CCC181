@@ -2,17 +2,8 @@
 
 {% block content %}
   <p>Hello, {{ name }}!</p>
-
-  <h2>Tickets in the queue</h2>
-  <ul class="tickets">
-    {% for ticket in tickets %}
-      <li>
-        <a href="{{ url_for('ticket', ticket_id=ticket['ticket_id']) }}">
-          #{{ ticket['ticket_id'] }} - {{ ticket['name'] }}
-        </a>
-      </li>
-    {% else %}
-      <li>The queue is empty.</li>
-    {% endfor %}
-  </ul>
+  <h1>Welcome to FixPoint</h1>
+  <h2>Join queue</h2>
+  <button class="btn btn-primary btn-lg">Join Queue</button>
 {% endblock %}
+`

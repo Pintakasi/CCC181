@@ -4,9 +4,10 @@ Run it with:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 """
-from flask import Flask, abort, render_template
+from flask import Flask, abort, render_template, request, url_for
 
 app = Flask(__name__)
+app.secret_key = "dev-only-change-me"
 
 # Sample data for the demo. A real app would load this from a database later.
 SERVICES = [
@@ -42,7 +43,7 @@ def get_ticket_by_id(ticket_id):
 def index():
     # render_template looks inside the templates/ folder and passes
     # keyword arguments to the template as variables.
-    return render_template("index.html", name="Ana", tickets=TICKETS)
+    return render_template("index.html", name="Rey", tickets=TICKETS)
 
 
 @app.route("/queue/<int:ticket_id>")
@@ -62,3 +63,13 @@ def hello():
 if __name__ == "__main__":
     # Lets you also start the app with: python app.py
     app.run(debug=True)
+
+#Added 
+
+@app.route("/join")
+def join_form():
+    return render_template("join.html")
+
+@app.route("/staff")
+def staff_dashboard():
+    return render_template("staff.html")
