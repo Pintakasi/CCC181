@@ -15,24 +15,22 @@
           <div id="live-status" aria-live="polite">
             <p class="text-body-secondary mb-2">People ahead of you</p>
             <div class="queue-position-circle mx-auto mb-4"
-                 role="img" aria-label="{{ position }} people ahead of you">
-              <span class="display-1 fw-bold lh-1">{{ position }}</span>
+                 role="img" aria-label="{{ position }} people ahead of you" id="position-circle">
+              <span class="display-1 fw-bold lh-1" id="position-count">{{ position }}</span>
             </div>
             <h1 class="h3 mb-3">Ticket ID: #{{ ticket.number }}</h1>
             <p class="lead mb-4">{{ service.name }}</p>
             <p class="mb-3">
               Status:
-              <span class="badge text-bg-{% if ticket.status == 'waiting' %}warning{% elif ticket.status == 'called' %}primary{% elif ticket.status == 'served' %}success{% else %}secondary{% endif %}">
-                {{ ticket.status }}
+              <span id="status-badge" class="badge text-bg-{% if ticket.status == 'waiting' %}warning{% elif ticket.status == 'called' %}primary{% elif ticket.status == 'served' %}success{% else %}secondary{% endif %}">
+                {{ ticket.status|title }}
               </span>
             </p>
-            {% if position == 0 %}
-              <p class="fs-5 fw-semibold">You're next!</p>
-            {% else %}
-              <p class="fs-5">
+            <p id="people-ahead" class="fs-5{% if position == 0 %} fw-semibold{% endif %}">
+              {% if position == 0 %}You're next!{% else %}
                 {{ position }} {% if position == 1 %}person{% else %}people{% endif %} ahead of you
-              </p>
-            {% endif %}
+              {% endif %}
+            </p>
           </div>
 
           {% if ticket.status in ['waiting', 'called'] %}
@@ -47,4 +45,40 @@
       </section>
     </div>
   </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const statusUrl = "{{ url_for('ticket_status', ticket_id=ticket.number) }}";
+  async function refreshStatus() {
+    try {
+      const res = await fetch(statusUrl);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const badge = document.getElementById("status-badge");
+      const statusClasses = {
+        waiting: "warning",
+        called: "primary",
+        served: "success",
+        "no-show": "secondary",
+      };
+      badge.textContent = data.status.replace(/\b\w/g, (letter) => letter.toUpperCase());
+      badge.className = `badge text-bg-${statusClasses[data.status] || "secondary"}`;
+
+      const positionCount = document.getElementById("position-count");
+      const positionCircle = document.getElementById("position-circle");
+      const peopleAhead = document.getElementById("people-ahead");
+      positionCount.textContent = data.ahead;
+      positionCircle.setAttribute("aria-label", `${data.ahead} people ahead of you`);
+      peopleAhead.textContent = data.ahead === 0
+        ? "You're next!"
+        : `${data.ahead} ${data.ahead === 1 ? "person" : "people"} ahead of you`;
+      peopleAhead.classList.toggle("fw-semibold", data.ahead === 0);
+    } catch (err) {
+      console.warn("Could not refresh status", err);
+    }
+  }
+  setInterval(refreshStatus, 10000);
+</script>
 {% endblock %}
