@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Staff · FixPoint{% endblock %}
+{% block title %}Staff · Fix Point{% endblock %}
 
 {% block content %}
   <h1 class="h2 mb-4">Customers for Today</h1>
@@ -31,7 +31,7 @@
             <th scope="col">Name</th>
             <th scope="col">Service</th>
             <th scope="col">Status</th>
-            <th scope="col">Actions</th>
+            <th scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -74,7 +74,7 @@
                       <input type="hidden" name="service_id" value="{{ selected }}">
                     {% endif %}
                     <button type="submit" class="btn btn-sm btn-outline-danger"
-                            aria-label="Mark ticket {{ ticket.number }} as no-show">No-show</button>
+                            aria-label="Mark ticket {{ ticket.number }} as no-show">Didn't Arrive</button>
                   </form>
                 </div>
               </td>

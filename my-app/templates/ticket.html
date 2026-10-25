@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My place · Ticket #{{ ticket.number }} · FixPoint{% endblock %}
+{% block title %}My place · Ticket #{{ ticket.number }} · Fix Point{% endblock %}
 
 {% block content %}
   <div class="row justify-content-center">
@@ -25,11 +25,6 @@
               <span id="status-badge" class="badge text-bg-{% if ticket.status == 'waiting' %}warning{% elif ticket.status == 'called' %}primary{% elif ticket.status == 'served' %}success{% else %}secondary{% endif %}">
                 {{ ticket.status|title }}
               </span>
-            </p>
-            <p id="people-ahead" class="fs-5{% if position == 0 %} fw-semibold{% endif %}">
-              {% if position == 0 %}You're next!{% else %}
-                {{ position }} {% if position == 1 %}person{% else %}people{% endif %} ahead of you
-              {% endif %}
             </p>
           </div>
 
@@ -68,13 +63,8 @@
 
       const positionCount = document.getElementById("position-count");
       const positionCircle = document.getElementById("position-circle");
-      const peopleAhead = document.getElementById("people-ahead");
       positionCount.textContent = data.ahead;
       positionCircle.setAttribute("aria-label", `${data.ahead} people ahead of you`);
-      peopleAhead.textContent = data.ahead === 0
-        ? "You're next!"
-        : `${data.ahead} ${data.ahead === 1 ? "person" : "people"} ahead of you`;
-      peopleAhead.classList.toggle("fw-semibold", data.ahead === 0);
     } catch (err) {
       console.warn("Could not refresh status", err);
     }
