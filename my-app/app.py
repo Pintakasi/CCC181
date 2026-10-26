@@ -42,6 +42,7 @@ def people_ahead(ticket):
 
 @app.route("/")
 def index():
+
     # render_template looks inside the templates/ folder and passes
     # keyword arguments to the template as variables.
     return render_template("index.html", name="Rey", tickets=TICKETS)
