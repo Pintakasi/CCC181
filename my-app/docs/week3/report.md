@@ -1,3 +1,6 @@
+PR LINK: https://github.com/Pintakasi/CCC181/pull/2
+
+
 ## 1 Title details:
    App name: Fix Point
    Setting: Cellphone repair shop
