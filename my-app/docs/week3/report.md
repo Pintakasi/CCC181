@@ -61,6 +61,8 @@ Since the light house scores are greater than 90, I did not fix anything in the 
 ![Before](screenshots/before.png)
 ![After](screenshots/after.png)
 
+## 8 Reflection
+   The hardest part this week is the unfamiliarity of the tech stack since I usually use Java and Springboot as the backend tech stack for my web app projects. I would probably remove the Staff Dashboard in the navbar, when there is already a database, I can implement login feature that it automatically displays user or staff dashboard depending on the user role. I will also add functionalities in the My Place screen, right now its just static. 
 
 ## 9 Declaration
    I used Copilot in vscode to assist me in understanding the initial code of my-app since this is my first time using python+flask+jinja as a tech stack in making web application. Overall, I used it as a guide.
