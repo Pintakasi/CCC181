@@ -1,134 +1,87 @@
-# ClinicQ: Hello, Flask
+# Fix Point
 
-Starter Flask app for **CCC181 Week 2: Git, GitHub & Flask Foundations**.
-It shows the project structure, routes, templates and static files from the slides.
+Fix Point is a Flask-based queue management prototype for a cellphone repair shop. Customers can view services and join the queue, check their ticket status and the number of people ahead, while staff can manage the waiting list.
+
+## Features
+
+- Join the queue with a name, cellphone number, and selected repair service.
+- Receive a numbered ticket and view its status, selected service, and people ahead.
+- Automatically refresh ticket status and queue count while the ticket page is open.
+- View and filter the staff queue by service.
+- Call the next waiting customer, mark customers served, or record a no-show.
+- Responsive pages built with Jinja templates, custom CSS, and Bootstrap.
 
 ## Project structure
 
-```
+```text
 my-app/
-├── app.py              # creates the app and defines routes
-├── requirements.txt    # packages to rebuild the environment
-├── .gitignore          # keeps .venv, caches and secrets out of Git
-├── .venv/              # your virtual environment (not committed)
-├── templates/          # Jinja2 HTML files for render_template()
-│   ├── base.html       # shared layout
-│   ├── index.html      # home page
-│   └── ticket.html     # page for /queue/<ticket_id>
-└── static/             # served at /static/...
-    ├── css/style.css
-    └── js/main.js
+├── app.py                 # Flask app, routes, sample services, and in-memory tickets
+├── requirements.txt       # Python dependencies
+├── templates/
+│   ├── base.html          # Shared page layout and navigation
+│   ├── index.html         # Home page
+│   ├── join.html          # Customer join-queue form
+│   ├── ticket.html        # Customer ticket and live status
+│   └── staff.html         # Staff queue dashboard
+├── static/
+│   ├── css/style.css      # Custom styles
+│   └── js/main.js         # Shared client-side JavaScript
+└── docs/week3/            # Personas, wireframes, accessibility, and usability documentation
 ```
 
 ## Routes
 
-| URL | View function | What you see |
+| Method | URL | Purpose |
 |---|---|---|
-| `/` | `index()` | "Hello, Ana!" and a list of tickets, rendered with `index.html` |
-| `/queue/<int:ticket_id>` | `ticket()` | A page for that ticket, e.g. `/queue/12` |
-| `/hello` | `hello()` | The plain text "Hello, CCC181!" |
+| `GET` | `/` | Home page with a link to join the queue |
+| `GET` | `/join` | Display the customer registration form |
+| `POST` | `/join` | Validate customer details and create a ticket |
+| `GET` | `/queue/<ticket_id>` | Show a ticket, service, status, and people ahead |
+| `GET` | `/queue/<ticket_id>/status.json` | Return the latest ticket status and people-ahead count |
+| `POST` | `/queue/<ticket_id>/leave` | Leave the queue |
+| `GET` | `/staff` | View the staff dashboard; optionally filter with `?service_id=<id>` |
+| `POST` | `/staff/tickets/<ticket_id>/<action>` | Update a ticket with `call`, `serve`, or `no-show` |
+| `GET` | `/hello` | Return a simple Flask greeting |
 
-Try `/queue/abc`: the `int` converter only accepts numbers, so Flask returns 404.
+## Run locally
 
-## 1. Set up the Python environment
+Run these commands from the `my-app` directory.
+
+Create a virtual environment:
 
 ```bash
-# create (once per project)
 python -m venv .venv
+```
 
-# activate (every new terminal)
-.venv\Scripts\activate          # Windows
-source .venv/bin/activate       # macOS/Linux
+Activate it:
 
-# install the packages
+```bash
+# macOS/Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# Windows Command Prompt
+.venv\Scripts\activate.bat
+```
+
+Install dependencies and start the development server:
+
+```bash
 pip install -r requirements.txt
-```
-
-Your prompt shows `(.venv)` when the environment is active. Some systems use `python3` or `py` instead of `python`.
-If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use Command Prompt.
-
-If you add more packages later, record them with:
-
-```bash
-pip freeze > requirements.txt
-```
-
-## 2. Run the app
-
-```bash
 flask --app app run --debug
 ```
 
-Open http://127.0.0.1:5000. With `--debug`, the server reloads every time you save a file. Never use debug mode in production.
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The debug server is for local development only; do not use it to deploy the app publicly.
 
-## 3. Put it on GitHub
+## Prototype limitations
 
-### Once per computer
+- Services and tickets are stored in Python lists in `app.py`. Changes are temporary and reset when the server restarts; this prototype does not use a database.
+- The staff dashboard has no authentication or authorization. Do not expose it to the public.
+- The Flask secret key in `app.py` is a development placeholder and must be replaced with a securely configured secret before deployment.
+- The waiting-time text is currently a fixed estimate, not a calculation based on the live queue.
 
-```bash
-git config --global user.name "Your Name"
-git config --global user.email you@g.msuiit.edu.ph   # same email as your GitHub account
-git config --list
-```
+## Project documentation
 
-### Create the local repository and first commit
-
-```bash
-git init
-git branch -M main
-git status              # .venv should NOT appear, thanks to .gitignore
-git add .
-git commit -m "Add Flask starter app"
-```
-
-### Connect to GitHub and push
-
-1. On GitHub, create a new **empty** repository (no README, no .gitignore).
-2. Copy its URL, then:
-
-```bash
-git remote add origin <repo-url>
-git push -u origin main
-```
-
-GitHub does not accept your account password for Git over HTTPS. Sign in through Git Credential Manager or the GitHub CLI, or use a personal access token or SSH key.
-
-### Everyday loop
-
-```bash
-git pull origin main     # before you start working
-git status
-git add <file>
-git commit -m "Add join-queue form"
-git push origin main     # when you have commits to share
-```
-
-## 4. Lab: ship it through a pull request
-
-1. On GitHub, open an issue: **"Set up Flask starter app"**.
-2. Pull the latest `main`, then create a branch:
-   ```bash
-   git switch main
-   git pull origin main
-   git switch -c feature/flask-setup
-   ```
-3. Create `.venv`, install Flask, write `requirements.txt` and `.gitignore`.
-4. Build `app.py` with a home route and one dynamic route, rendered with `base.html` and `index.html`.
-5. Commit in small steps, then push the branch:
-   ```bash
-   git push -u origin feature/flask-setup
-   ```
-6. On GitHub, click **Compare & pull request** and write `Closes #N` in the description (N is your issue number). Merge it, then:
-   ```bash
-   git switch main
-   git pull origin main
-   ```
-
-**Early finishers:** add another static CSS rule linked with `url_for`, or a third route based on one Must feature from your project milestone.
-
-## Commit message tips
-
-- Short summary in the imperative: "Add...", "Fix..."
-- One logical change per commit
-- Commit early and often
-- Good: "Add join-queue form". Unhelpful: "update", "asdf", "final na talaga".
+See [`docs/week3/`](docs/week3/) for the personas, wireframes, design feedback, Lighthouse accessibility results, and usability test summary.

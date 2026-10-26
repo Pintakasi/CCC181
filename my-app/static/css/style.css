@@ -32,6 +32,21 @@ main {
 
 h2 { color: var(--teal); }
 
+.staff-queue-table {
+  min-width: 700px;
+}
+
+.queue-position-circle {
+  width: min(12rem, 60vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: white;
+}
+
 .tickets { list-style: none; padding: 0; }
 .tickets li {
   background: var(--card);

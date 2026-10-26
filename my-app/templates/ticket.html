@@ -1,9 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}Ticket #{{ ticket_id }} · ClinicQ{% endblock %}
+{% block title %}My place · Ticket #{{ ticket.number }} · Fix Point{% endblock %}
 
 {% block content %}
-  <h2>Ticket #{{ ticket_id }}</h2>
-  <p>This page was built from the URL <code>/queue/{{ ticket_id }}</code>.</p>
-  <p><a href="{{ url_for('index') }}">&larr; Back to the queue</a></p>
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+      <section class="card shadow-sm text-center">
+        <div class="card-body p-4 p-md-5">
+          <div class="text-start mb-4">
+            <p class="text-body-secondary mb-1">Estimated waiting time</p>
+            <p class="fw-semibold mb-0">20 mins</p>
+          </div>
+
+          <div id="live-status" aria-live="polite">
+            <p class="fw-semibold fs-5 text-dark mb-2">People ahead of you</p>
+            <div class="queue-position-circle mx-auto mb-4 shadow"
+                 role="img" aria-label="{{ position }} people ahead of you" id="position-circle">
+              <span class="display-1 fw-bold lh-1" id="position-count">{{ position }}</span>
+            </div>
+            <h1 class="h3 mb-3">Ticket ID: #{{ ticket.number }}</h1>
+            <p class="lead mb-4">{{ service.name }}</p>
+            <p class="mb-3">
+              Status:
+              <span id="status-badge" class="badge text-bg-{% if ticket.status == 'waiting' %}warning{% elif ticket.status == 'called' %}primary{% elif ticket.status == 'served' %}success{% else %}secondary{% endif %}">
+                {{ ticket.status|title }}
+              </span>
+            </p>
+          </div>
+
+          {% if ticket.status in ['waiting', 'called'] %}
+            <form method="post" action="{{ url_for('leave_queue', ticket_id=ticket.number) }}"
+                  class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                Leave Queue
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const statusUrl = "{{ url_for('ticket_status', ticket_id=ticket.number) }}";
+  async function refreshStatus() {
+    try {
+      const res = await fetch(statusUrl);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const badge = document.getElementById("status-badge");
+      const statusClasses = {
+        waiting: "warning",
+        called: "primary",
+        served: "success",
+        "no-show": "secondary",
+      };
+      badge.textContent = data.status.replace(/\b\w/g, (letter) => letter.toUpperCase());
+      badge.className = `badge text-bg-${statusClasses[data.status] || "secondary"}`;
+
+      const positionCount = document.getElementById("position-count");
+      const positionCircle = document.getElementById("position-circle");
+      positionCount.textContent = data.ahead;
+      positionCircle.setAttribute("aria-label", `${data.ahead} people ahead of you`);
+    } catch (err) {
+      console.warn("Could not refresh status", err);
+    }
+  }
+  setInterval(refreshStatus, 10000);
+</script>
 {% endblock %}

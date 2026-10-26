@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Staff · Fix Point{% endblock %}
+
+{% block content %}
+  <h1 class="h2 mb-4">Customers for Today</h1>
+
+  <form method="get" action="{{ url_for('staff_dashboard') }}" class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-sm-8 col-md-6">
+      <label for="service_id" class="form-label">Filter by service</label>
+      <select id="service_id" name="service_id" class="form-select">
+        <option value="">All services</option>
+        {% for service in services %}
+          <option value="{{ service.id }}"
+            {% if selected == service.id %}selected{% endif %}>{{ service.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-primary">Filter</button>
+    </div>
+  </form>
+
+  {% if queue %}
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle staff-queue-table">
+        <caption>Waiting and called customers, in ticket-number order</caption>
+        <thead>
+          <tr>
+            <th scope="col">Ticket ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Service</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in queue %}
+            <tr>
+              <th scope="row">
+                <a href="{{ url_for('ticket', ticket_id=ticket.number) }}">#{{ ticket.number }}</a>
+              </th>
+              <td>{{ ticket.name }}</td>
+              <td>{{ names[ticket.service_id] }}</td>
+              <td>
+                <span class="badge text-bg-{% if ticket.status == 'waiting' %}warning{% else %}primary{% endif %}">
+                  {{ ticket.status }}
+                </span>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  {% if ticket.status == 'waiting' %}
+                    <form method="post"
+                          action="{{ url_for('staff_action', ticket_id=ticket.number, action='call') }}">
+                      {% if selected is not none %}
+                        <input type="hidden" name="service_id" value="{{ selected }}">
+                      {% endif %}
+                      <button type="submit" class="btn btn-sm btn-outline-primary"
+                              aria-label="Call ticket {{ ticket.number }}">Call</button>
+                    </form>
+                  {% else %}
+                    <form method="post"
+                          action="{{ url_for('staff_action', ticket_id=ticket.number, action='serve') }}">
+                      {% if selected is not none %}
+                        <input type="hidden" name="service_id" value="{{ selected }}">
+                      {% endif %}
+                      <button type="submit" class="btn btn-sm btn-success"
+                              aria-label="Mark ticket {{ ticket.number }} as served">Serve</button>
+                    </form>
+                  {% endif %}
+                  <form method="post"
+                        action="{{ url_for('staff_action', ticket_id=ticket.number, action='no-show') }}">
+                    {% if selected is not none %}
+                      <input type="hidden" name="service_id" value="{{ selected }}">
+                    {% endif %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            aria-label="Mark ticket {{ ticket.number }} as no-show">Didn't Arrive</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+      {% if next_ticket %}
+    <form method="post"
+          action="{{ url_for('staff_action', ticket_id=next_ticket.number, action='call') }}"
+          class="mb-4">
+      {% if selected is not none %}
+        <input type="hidden" name="service_id" value="{{ selected }}">
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-lg w-100">
+        Call next · Ticket #{{ next_ticket.number }} · {{ next_ticket.name }}
+      </button>
+    </form>
+  {% else %}
+    <button type="button" class="btn btn-primary btn-lg w-100 mb-4" disabled>
+      No waiting tickets to call
+    </button>
+  {% endif %}
+  {% else %}
+    <div class="alert alert-light border" role="status">
+      No one is waiting or currently being called{% if selected is not none %} for this service{% endif %}.
+    </div>
+  {% endif %}
+{% endblock %}
