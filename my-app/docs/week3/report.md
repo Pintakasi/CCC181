@@ -25,6 +25,11 @@
 ![Laptop-My Place](screenshots/laptop-myplace.png)
 ![Laptop-Staff Dashboard](screenshots/laptop-staffdashboard.png)
 
+![Mobile JoinQ and My Place](screenshots/mobile-Join&&MyPlace.png)
+![Mobile staffdashboard](screenshots/mobile-staffdashboard.png)
+
+
+
 
 ## 4 Design decisions
    Because my persona Winston is busy repairing, he must can quickly call the customer next in line without having to manually look the table who is next to call, that is why I made a big button that calls the next in line, since also he is old, I made buttons and fonts larger than usual. In the customer screens, Since its very important for my persona named Rey to know which position becuase it determines when he will start to travel to CDO, the number of how many people are ahead of him is the biggest and most noticeable thing he sees in My Place screen. I design the UI so that there is no need also to click or navigate to know which positon he is since its already directly presented in MyPlace Screen.
