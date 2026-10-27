@@ -4,6 +4,12 @@ PR LINK: https://github.com/Pintakasi/CCC181/pull/2
 ## 1 Title details:
    App name: Fix Point
    Setting: Cellphone repair shop
+   Student: Vince Ryan P. Dizon
+   Student ID: 2024-2127
+   Section: CS3A
+   Report Date: Oct. 26, 2026
+   PR LINK: https://github.com/Pintakasi/CCC181/pull/2
+
 
 ## 2 Personas:
 
