@@ -85,3 +85,7 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The debug server is for loc
 ## Project documentation
 
 See [`docs/week3/`](docs/week3/) for the personas, wireframes, design feedback, Lighthouse accessibility results, and usability test summary.
+
+
+##Requirements
+[`docs/requirements.md/`](docs/week3/requirements.md)
