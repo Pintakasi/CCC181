@@ -36,6 +36,7 @@
 | `services` | id, name, estimated_duration |
 | `customers` | id, name, phone_number |
 | `technicians` | id, full_name, username, password_hash |
+| `services_chosen` | id, service_id, ticket_id |
 
 ## 2c. Choose types and constraints on purpose
 
@@ -47,7 +48,7 @@
 | `tickets` | `status` | `varchar(20)` | `NOT NULL, CHECK (status IN ('waiting', 'called', 'completed', 'no_show', 'left'))` | Restricts tickets to the supported queue states |
 | `tickets` | `created_at` | `timestamptz` | `NOT NULL DEFAULT now()` | Records when the ticket entered the queue with its time zone |
 | `tickets` | `called_at` | `timestamptz` | `NULLABLE` | Records when a technician called the ticket; null until called |
-| `tickets` | `service_id` | `integer` | `NOT NULL, FOREIGN KEY REFERENCES services(id)` | Every ticket must refer to an existing service |
+| `tickets` | `description` | `text` | `NULLABLE` | Lets customers optionally describe their issue |
 | `tickets` | `customer_id` | `integer` | `NOT NULL, FOREIGN KEY REFERENCES customers(id)` | Every ticket must belong to an existing customer |
 | `tickets` | `assigned_technician_id` | `integer` | `FOREIGN KEY REFERENCES technicians(id)` | Allows an optional technician assignment and prevents references to missing technicians |
 | `device_photos` | `id` | `integer GENERATED ALWAYS AS IDENTITY` | `PRIMARY KEY` | Database-generated identifier for each uploaded photo |
@@ -63,6 +64,9 @@
 | `technicians` | `full_name` | `varchar(100)` | `NOT NULL` | A technician's name is required |
 | `technicians` | `username` | `varchar(50)` | `NOT NULL UNIQUE` | Requires a login name that is unique to each technician |
 | `technicians` | `password_hash` | `varchar(255)` | `NOT NULL` | Requires a stored password hash for authentication, not a plaintext password |
+|`services_chosen`| `id` | `integer GENERATED ALWAYS AS IDENTITY` | `PRIMARY KEY` | Database-generated identifier for each record |
+|`services_chosen`| `service_id` | `integer` | `NOT NULL, FOREIGN KEY REFERENCES(service.id)` | Ensures each chosen service refers to an existing service |
+|`services_chosen`| `ticket_id` | `integer` | `NOT NULL, FOREIGN KEY REFERENCES(ticket.id)` | Ensures each record is associated with an existing ticket |
 
 `estimated_duration` is measured in minutes. Phone numbers are stored as text because they are identifiers, not quantities; dates, times, and numeric measurements use temporal or numeric PostgreSQL types.
 
@@ -77,6 +81,8 @@ One customer can have many tickets, and each ticket belongs to exactly one custo
 
 One service can have many tickets, and each ticket uses exactly one service. 
 
+One ticket can have many `services_chosen` records, and each record belongs to exactly one ticket. One service can appear in many `services_chosen` records, and each record refers to exactly one service.
+
 One technician can be assigned to many tickets, while each ticket has exactly one assigned technician. 
 
 One ticket can have many device photos, and each device photo belongs to exactly one ticket.
@@ -89,6 +95,8 @@ One ticket can have many device photos, and each device photo belongs to exactly
 | `tickets.customer_id` → `customers.id` | `RESTRICT` | A customer with existing tickets cannot be deleted, preserving ticket ownership and history. |
 | `tickets.assigned_technician_id` → `technicians.id` | `SET NULL` | Deleting a technician removes only the optional assignment; the ticket and its history remain. |
 | `device_photos.ticket_id` → `tickets.id` | `CASCADE` | Photos belong only to their ticket, so deleting the ticket also removes its associated photos. |
+| `services_chosen.service_id` → `services.id` | `RESTRICT` | A service with existing chosen-service records cannot be deleted, preserving those associations. |
+| `services_chosen.ticket_id` → `tickets.id` | `CASCADE` | Chosen-service records belong to their ticket, so deleting the ticket also removes those records. |
 
 
 ## 2e. Check that it is normalized
