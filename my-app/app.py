@@ -29,6 +29,29 @@ migrate = Migrate(app, db)
 
 
 
+@app.cli.command("seed")
+def seed():
+    """Add the starting repair services if they are not there yet."""
+    starting = [
+        ("Device Checkup", 15),
+        ("Screen Replacement", 60),
+        ("Battery Replacement", 45),
+        ("Charging Port Repair", 60),
+        ("LCD and Touchscreen Repair", 90),
+        ("Camera Repair or Replacement", 45),
+        ("Speaker and Microphone Repair", 45),
+        ("Power Button and Volume Button Repair", 45),
+        ("Water Damage Repair", 120),
+        ("Motherboard Repair", 120),
+    ]
+    for name, minutes in starting:
+        exists = db.session.scalar(db.select(Service).filter_by(name=name))
+        if exists is None:
+            db.session.add(Service(name=name, estimated_duration=minutes))
+    db.session.commit()
+    print("Services are ready.")
+
+
 # Sample data for the demo. A real app would load this from a database later.
 SERVICES = [
     {"id": 0, "name": "Device Checkup"},

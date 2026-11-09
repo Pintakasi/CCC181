@@ -26,7 +26,6 @@ class Service(db.Model):
         CheckConstraint("estimated_duration > 0", name="service_estimated_duration_positive"),
     )
 
-    tickets = db.relationship("Ticket", back_populates="service")
     chosen_services = db.relationship("ServicesChosen", back_populates="service", cascade="all, delete-orphan")
 
 
@@ -70,7 +69,6 @@ class Ticket(db.Model):
     )
 
     customer = db.relationship("Customer", back_populates="tickets")
-    service = db.relationship("Service", back_populates="tickets")
     assigned_technician = db.relationship("Technician", back_populates="assigned_tickets")
     photos = db.relationship("DevicePhoto", back_populates="ticket", cascade="all, delete-orphan")
     chosen_services = db.relationship("ServicesChosen", back_populates="ticket", cascade="all, delete-orphan")
