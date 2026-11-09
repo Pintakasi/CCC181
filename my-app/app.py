@@ -4,10 +4,30 @@ Run it with:
     flask --app app run --debug
 then open http://127.0.0.1:5000
 """
+import os
+
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
+
+#W4 Imports
+from dotenv import load_dotenv
+from flask_migrate import Migrate
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
+from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "dev-only-change-me"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
+app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO") == "1"
+
+db.init_app(app)
+migrate = Migrate(app, db)
+
+
 
 # Sample data for the demo. A real app would load this from a database later.
 SERVICES = [
