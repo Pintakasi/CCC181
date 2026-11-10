@@ -90,25 +90,22 @@
       </table>
     </div>
 
-      {% if next_ticket %}
-    <form method="post"
-          action="{{ url_for('staff_action', ticket_id=next_ticket.id, action='call') }}"
-          class="mb-4">
-      {% if selected is not none %}
-        <input type="hidden" name="service_id" value="{{ selected }}">
-      {% endif %}
-      <button type="submit" class="btn btn-primary btn-lg w-100">
-        Call next · {{ next_ticket.ticket_code }} · {{ next_ticket.customer.name }}
-      </button>
-    </form>
-  {% else %}
-    <button type="button" class="btn btn-primary btn-lg w-100 mb-4" disabled>
-      No waiting tickets to call
-    </button>
-  {% endif %}
   {% else %}
     <div class="alert alert-light border" role="status">
       No one is waiting or currently being called{% if selected is not none %} for this service{% endif %}.
     </div>
   {% endif %}
+
+  <form method="post" action="{{ url_for('call_next') }}" class="mb-4">
+    {% if selected is not none %}
+      <input type="hidden" name="service_id" value="{{ selected }}">
+    {% endif %}
+    <button type="submit" class="btn btn-primary btn-lg w-100">
+      {% if next_ticket %}
+        Call next · {{ next_ticket.ticket_code }} · {{ next_ticket.customer.name }}
+      {% else %}
+        Call next
+      {% endif %}
+    </button>
+  </form>
 {% endblock %}

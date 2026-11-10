@@ -341,6 +341,8 @@ def staff_action(ticket_id, action):
 
     ticket_data = db.get_or_404(Ticket, ticket_id)
     ticket_data.status = new_status
+    if new_status == "called":
+        ticket_data.called_at = func.now()
     try:
         db.session.commit()
     except SQLAlchemyError:
@@ -352,6 +354,41 @@ def staff_action(ticket_id, action):
     flash(f"Ticket {ticket_data.ticket_code} marked {new_status.replace('_', ' ')}.", "info")
     service_id = request.form.get("service_id", type=int)
     redirect_args = {"service_id": service_id} if service_id is not None else {}
+    return redirect(url_for("staff_dashboard", **redirect_args))
+
+
+@app.post("/staff/call-next")
+def call_next():
+    service_id = request.form.get("service_id", type=int)
+    stmt = (
+        db.select(Ticket)
+        .filter_by(status="waiting")
+        .order_by(Ticket.created_at)
+        .limit(1)
+    )
+    if service_id is not None:
+        matching_ticket_ids = db.select(ServicesChosen.ticket_id).where(
+            ServicesChosen.service_id == service_id
+        )
+        stmt = stmt.where(Ticket.id.in_(matching_ticket_ids))
+
+    ticket_data = db.session.scalar(stmt)
+    redirect_args = {"service_id": service_id} if service_id is not None else {}
+    if ticket_data is None:
+        flash("There are no waiting tickets to call.", "info")
+        return redirect(url_for("staff_dashboard", **redirect_args))
+
+    ticket_data.status = "called"
+    ticket_data.called_at = func.now()
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Failed to call the next waiting ticket.")
+        flash("The next ticket could not be called. Please try again.", "danger")
+        return redirect(url_for("staff_dashboard", **redirect_args))
+
+    flash(f"Ticket {ticket_data.ticket_code} marked called.", "info")
     return redirect(url_for("staff_dashboard", **redirect_args))
 
 
