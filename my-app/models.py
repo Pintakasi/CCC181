@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint, func
+from sqlalchemy import CheckConstraint, func, true
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 db = SQLAlchemy()
@@ -22,6 +23,7 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
     estimated_duration = db.Column(db.Integer, nullable=False)
+    active: Mapped[bool] = mapped_column(default=True, server_default=true())
 
     __table_args__ = (
         CheckConstraint("estimated_duration > 0", name="service_estimated_duration_positive"),
