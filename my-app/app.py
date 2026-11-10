@@ -392,6 +392,26 @@ def call_next():
     return redirect(url_for("staff_dashboard", **redirect_args))
 
 
+@app.post("/staff/tickets/<int:ticket_id>/delete")
+def delete_ticket(ticket_id):
+    ticket_data = db.get_or_404(Ticket, ticket_id)
+    ticket_code = ticket_data.ticket_code
+    service_id = request.form.get("service_id", type=int)
+    redirect_args = {"service_id": service_id} if service_id is not None else {}
+
+    db.session.delete(ticket_data)
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Failed to delete ticket %s.", ticket_id)
+        flash("The ticket could not be deleted. Please try again.", "danger")
+        return redirect(url_for("staff_dashboard", **redirect_args))
+
+    flash(f"Ticket {ticket_code} was deleted.", "info")
+    return redirect(url_for("staff_dashboard", **redirect_args))
+
+
 
 #Helper function: Generates generate a cryptographically secure random 8-character string.
 

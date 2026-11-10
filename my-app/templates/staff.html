@@ -82,6 +82,15 @@
                     <button type="submit" class="btn btn-sm btn-outline-danger"
                             aria-label="Mark ticket {{ ticket.ticket_code }} as no-show">Didn't Arrive</button>
                   </form>
+                  <form method="post"
+                        action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}"
+                        data-confirm="Delete ticket {{ ticket.ticket_code }}? This cannot be undone.">
+                    {% if selected is not none %}
+                      <input type="hidden" name="service_id" value="{{ selected }}">
+                    {% endif %}
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            aria-label="Delete ticket {{ ticket.ticket_code }}">Delete</button>
+                  </form>
                 </div>
               </td>
             </tr>
