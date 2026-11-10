@@ -30,6 +30,7 @@ class Service(db.Model):
     )
 
     chosen_services = db.relationship("ServicesChosen", back_populates="service", cascade="all, delete-orphan")
+    tickets = db.relationship("Ticket", secondary="services_chosen", viewonly=True)
 
 
 class Technician(db.Model):

@@ -53,6 +53,11 @@
         <fieldset>
           <legend class="form-label fs-6">Services</legend>
           <p class="form-text mt-0">Choose one or more services.</p>
+          {% if not services %}
+            <p class="alert alert-info py-2" role="status">
+              No services are currently available. Please contact staff.
+            </p>
+          {% endif %}
           <div class="row g-2">
             {% for s in services %}
               <div class="col-12 col-sm-6">

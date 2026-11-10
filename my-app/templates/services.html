@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Manage services · Fix Point{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h2 mb-0">Manage services</h1>
+    <a class="btn btn-outline-secondary" href="{{ url_for('staff_dashboard') }}">Back to staff dashboard</a>
+  </div>
+
+  <section class="card mb-4" aria-labelledby="create-service-heading">
+    <div class="card-body">
+      <h2 id="create-service-heading" class="h5">Add a service</h2>
+      <form method="post" action="{{ url_for('service_create') }}" class="row g-3 align-items-end">
+        <div class="col-12 col-md-7">
+          <label for="new-service-name" class="form-label">Name</label>
+          <input id="new-service-name" name="name" type="text" maxlength="100"
+                 class="form-control" required>
+        </div>
+        <div class="col-8 col-md-3">
+          <label for="new-service-minutes" class="form-label">Average minutes</label>
+          <input id="new-service-minutes" name="avg_minutes" type="number" min="1"
+                 class="form-control" required>
+        </div>
+        <div class="col-4 col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Add</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  {% if services %}
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <caption>Services, current average duration, active status, and ticket count</caption>
+        <thead>
+          <tr>
+            <th scope="col">Service</th>
+            <th scope="col">Average minutes</th>
+            <th scope="col">Active</th>
+            <th scope="col">Tickets</th>
+            <th scope="col">Update service</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in services %}
+            <tr>
+              <th scope="row">{{ s.name }}</th>
+              <td>{{ s.estimated_duration }}</td>
+              <td>
+                {% if s.active %}
+                  <span class="badge text-bg-success">Active</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td>{{ s.tickets|length }}</td>
+              <td>
+                <form method="post" action="{{ url_for('service_edit', service_id=s.id) }}"
+                      class="row g-2 align-items-center">
+                  <div class="col-12 col-lg-5">
+                    <label class="visually-hidden" for="service-name-{{ s.id }}">Name</label>
+                    <input id="service-name-{{ s.id }}" name="name" type="text" maxlength="100"
+                           class="form-control form-control-sm" value="{{ s.name }}" required>
+                  </div>
+                  <div class="col-7 col-lg-3">
+                    <label class="visually-hidden" for="service-minutes-{{ s.id }}">Average minutes</label>
+                    <input id="service-minutes-{{ s.id }}" name="avg_minutes" type="number" min="1"
+                           class="form-control form-control-sm" value="{{ s.estimated_duration }}" required>
+                  </div>
+                  <div class="col-5 col-lg-2 form-check">
+                    <input id="service-active-{{ s.id }}" name="active" type="checkbox"
+                           class="form-check-input" {% if s.active %}checked{% endif %}>
+                    <label class="form-check-label" for="service-active-{{ s.id }}">Active</label>
+                  </div>
+                  <div class="col-12 col-lg-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Save</button>
+                  </div>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('service_delete', service_id=s.id) }}"
+                      data-confirm="Delete service {{ s.name }}? This cannot be undone.">
+                  <button type="submit" class="btn btn-sm btn-outline-danger"
+                          {% if s.tickets %}aria-describedby="service-delete-help-{{ s.id }}"{% endif %}>
+                    Delete
+                  </button>
+                  {% if s.tickets %}
+                    <span id="service-delete-help-{{ s.id }}" class="visually-hidden">
+                      This service has tickets and cannot be deleted.
+                    </span>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-body-secondary">No services yet. Add one above.</p>
+  {% endif %}
+{% endblock %}

@@ -16,7 +16,7 @@ from flask import Flask, abort, flash, redirect, render_template, request, url_f
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from sqlalchemy import func
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
 from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
@@ -143,13 +143,16 @@ if __name__ == "__main__":
 #Added 
 
 #Retrieves all services ordered by name from database
-def all_services():
-    return db.session.scalars(db.select(Service).order_by(Service.name)).all()
+def all_services(active_only=False):
+    stmt = db.select(Service).order_by(Service.name)
+    if active_only:
+        stmt = stmt.where(Service.active.is_(True))
+    return db.session.scalars(stmt).all()
 
 #Serves the join.html when a client requests for GET /join
 @app.get("/join")
 def join_form():
-    return render_template("join.html", services=all_services(), form={})
+    return render_template("join.html", services=all_services(active_only=True), form={})
 
 
 
@@ -203,12 +206,17 @@ def join():
         errors["services"] = "Choose at least one valid service."
 
     services = (
-        db.session.scalars(db.select(Service).where(Service.id.in_(service_ids))).all()
+        db.session.scalars(
+            db.select(Service).where(
+                Service.id.in_(service_ids),
+                Service.active.is_(True),
+            )
+        ).all()
         if service_ids
         else []
     )
     if service_ids and len(services) != len(service_ids):
-        errors["services"] = "Choose valid services from the list."
+        errors["services"] = "Choose valid active services from the list."
 
     if any(not photo.mimetype or not photo.mimetype.startswith("image/") for photo in uploaded_photos):
         errors["photos"] = "Upload image files only."
@@ -222,7 +230,7 @@ def join():
             flash("Please fix the highlighted fields.", "danger")
         return render_template(
             "join.html",
-            services=all_services(),
+            services=all_services(active_only=True),
             form=form,
             errors=errors,
             selected_services=selected_services,
@@ -233,7 +241,7 @@ def join():
         errors["form"] = "Ticketing is temporarily unavailable. Please try again later."
         return render_template(
             "join.html",
-            services=all_services(),
+            services=all_services(active_only=True),
             form=form,
             errors=errors,
             selected_services=selected_services,
@@ -295,7 +303,7 @@ def join():
         errors["form"] = "We could not save your ticket. Please try again."
         return render_template(
             "join.html",
-            services=all_services(),
+            services=all_services(active_only=True),
             form=form,
             errors=errors,
             selected_services=selected_services,
@@ -331,6 +339,76 @@ def staff_dashboard():
         selected=service_id,
         next_ticket=next_ticket,
     )
+
+
+@app.get("/staff/services")
+def services_list():
+    services = db.session.scalars(
+        db.select(Service)
+        .options(selectinload(Service.tickets))
+        .order_by(Service.name)
+    ).all()
+    return render_template("services.html", services=services)
+
+
+@app.post("/staff/services")
+def service_create():
+    name = request.form.get("name", "").strip()
+    minutes = request.form.get("avg_minutes", type=int)
+    if not name or len(name) > 100 or minutes is None or minutes <= 0:
+        flash("Enter a name (up to 100 characters) and minutes greater than 0.", "danger")
+        return redirect(url_for("services_list"))
+
+    db.session.add(Service(name=name, estimated_duration=minutes))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash(f'A service named "{name}" already exists.', "danger")
+    else:
+        flash(f'Service "{name}" added.', "success")
+    return redirect(url_for("services_list"))
+
+
+@app.post("/staff/services/<int:service_id>/edit")
+def service_edit(service_id):
+    service = db.get_or_404(Service, service_id)
+    name = request.form.get("name", "").strip()
+    minutes = request.form.get("avg_minutes", type=int)
+    if not name or len(name) > 100 or minutes is None or minutes <= 0:
+        flash("Enter a name (up to 100 characters) and minutes greater than 0.", "danger")
+        return redirect(url_for("services_list"))
+
+    service.name = name
+    service.estimated_duration = minutes
+    service.active = request.form.get("active") == "on"
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash(f'A service named "{name}" already exists.', "danger")
+    else:
+        flash(f'Service "{name}" updated.', "success")
+    return redirect(url_for("services_list"))
+
+
+@app.post("/staff/services/<int:service_id>/delete")
+def service_delete(service_id):
+    service = db.get_or_404(Service, service_id)
+    if service.tickets:
+        flash(f'"{service.name}" has tickets, so it cannot be deleted. Turn it off instead.', "danger")
+        return redirect(url_for("services_list"))
+
+    service_name = service.name
+    db.session.delete(service)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash(f'"{service_name}" has tickets, so it cannot be deleted. Turn it off instead.', "danger")
+    else:
+        flash(f'Service "{service_name}" deleted.', "warning")
+    return redirect(url_for("services_list"))
 
 
 @app.post("/staff/tickets/<int:ticket_id>/<action>")

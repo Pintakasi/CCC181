@@ -31,6 +31,11 @@
                {% if request.endpoint == 'staff_dashboard' %}aria-current="page"{% endif %}
                href="{{ url_for('staff_dashboard') }}">Staff</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint in ('services_list', 'service_create', 'service_edit', 'service_delete') %}active{% endif %}"
+               {% if request.endpoint in ('services_list', 'service_create', 'service_edit', 'service_delete') %}aria-current="page"{% endif %}
+               href="{{ url_for('services_list') }}">Manage services</a>
+          </li>
         </ul>
       </div>
     </div>

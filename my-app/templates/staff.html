@@ -3,7 +3,10 @@
 {% block title %}Staff · Fix Point{% endblock %}
 
 {% block content %}
-  <h1 class="h2 mb-4">Customers for Today</h1>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h2 mb-0">Customers for Today</h1>
+    <a class="btn btn-outline-primary" href="{{ url_for('services_list') }}">Manage services</a>
+  </div>
 
   <form method="get" action="{{ url_for('staff_dashboard') }}" class="row g-2 align-items-end mb-3">
     <div class="col-12 col-sm-8 col-md-6">
