@@ -8,13 +8,14 @@ import os
 import re
 import secrets
 import string
+from datetime import timedelta, timezone
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
 #W4 Imports
 from dotenv import load_dotenv
 from flask_migrate import Migrate
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
 from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
@@ -24,6 +25,7 @@ EMAIL_PATTERN = re.compile(
     r"@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
     r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
 )
+PH_TIME = timezone(timedelta(hours=8))
 
 load_dotenv()
 
@@ -35,6 +37,12 @@ app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO") == "1"
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+
+@app.template_filter("local")
+def local_time(value):
+    """Show a database time in Philippine time, e.g. Oct 26, 08:01 AM."""
+    return value.astimezone(PH_TIME).strftime("%b %d, %I:%M %p") if value else ""
 
 
 
@@ -66,13 +74,19 @@ def people_ahead(ticket):
     return db.session.scalar(
         db.select(func.count(Ticket.id)).where(
             Ticket.status == "waiting",
-            or_(
-                Ticket.created_at < ticket.created_at,
-                and_(
-                    Ticket.created_at == ticket.created_at,
-                    Ticket.id < ticket.id,
-                ),
-            ),
+            Ticket.id < ticket.id,
+        )
+    )
+
+
+def estimated_wait_minutes(ticket):
+    return db.session.scalar(
+        db.select(func.coalesce(func.sum(Service.estimated_duration), 0))
+        .join(ServicesChosen, ServicesChosen.service_id == Service.id)
+        .join(Ticket, Ticket.id == ServicesChosen.ticket_id)
+        .where(
+            Ticket.status == "waiting",
+            Ticket.id < ticket.id,
         )
     )
 
@@ -84,23 +98,24 @@ def index():
 
 @app.get("/queue/<int:ticket_id>")
 def ticket(ticket_id):
-    t = db.session.get(Ticket, ticket_id)
-    if t is None:
-        abort(404)
+    t = db.get_or_404(Ticket, ticket_id)
     return render_template(
         "ticket.html",
         ticket=t,
         services=[chosen.service for chosen in t.chosen_services],
-        position=people_ahead(t),
+        ahead=people_ahead(t),
+        estimated_wait_minutes=estimated_wait_minutes(t),
     )
 
 
 @app.get("/queue/<int:ticket_id>/status.json")
 def ticket_status(ticket_id):
-    t = db.session.get(Ticket, ticket_id)
-    if t is None:
-        abort(404)
-    return {"status": t.status, "ahead": people_ahead(t)}
+    t = db.get_or_404(Ticket, ticket_id)
+    return {
+        "status": t.status,
+        "ahead": people_ahead(t),
+        "estimated_wait_minutes": estimated_wait_minutes(t),
+    }
 
 
 @app.post("/queue/<int:ticket_id>/leave")
