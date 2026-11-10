@@ -13,8 +13,8 @@ from flask import Flask, abort, flash, redirect, render_template, request, url_f
 #W4 Imports
 from dotenv import load_dotenv
 from flask_migrate import Migrate
-from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_, func, or_
+from sqlalchemy.exc import SQLAlchemyError
 
 from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
 
@@ -56,10 +56,17 @@ def seed():
 
 
 def people_ahead(ticket):
-    return sum(
-        1 for other in TICKETS
-        if other["status"] == "waiting"
-        and other["number"] < ticket["number"]
+    return db.session.scalar(
+        db.select(func.count(Ticket.id)).where(
+            Ticket.status == "waiting",
+            or_(
+                Ticket.created_at < ticket.created_at,
+                and_(
+                    Ticket.created_at == ticket.created_at,
+                    Ticket.id < ticket.id,
+                ),
+            ),
+        )
     )
 
 
@@ -70,29 +77,32 @@ def index():
 
 @app.get("/queue/<int:ticket_id>")
 def ticket(ticket_id):
-    t = next((t for t in TICKETS if t["number"] == ticket_id), None)
+    t = db.session.get(Ticket, ticket_id)
     if t is None:
         abort(404)
-    service = next(s for s in SERVICES if s["id"] == t["service_id"])
     return render_template(
-        "ticket.html", ticket=t, service=service, position=people_ahead(t)
+        "ticket.html",
+        ticket=t,
+        services=[chosen.service for chosen in t.chosen_services],
+        position=people_ahead(t),
     )
 
 
 @app.get("/queue/<int:ticket_id>/status.json")
 def ticket_status(ticket_id):
-    t = next((t for t in TICKETS if t["number"] == ticket_id), None)
+    t = db.session.get(Ticket, ticket_id)
     if t is None:
         abort(404)
-    return {"status": t["status"], "ahead": people_ahead(t)}
+    return {"status": t.status, "ahead": people_ahead(t)}
 
 
 @app.post("/queue/<int:ticket_id>/leave")
 def leave_queue(ticket_id):
-    t = next((t for t in TICKETS if t["number"] == ticket_id), None)
+    t = db.session.get(Ticket, ticket_id)
     if t is None:
         abort(404)
-    t["status"] = "no-show"
+    t.status = "left"
+    db.session.commit()
     flash("You have left the queue.", "success")
     return redirect(url_for("index"))
 
@@ -125,12 +135,15 @@ def join():
     form = request.form
     name = form.get("name", "").strip()
     contact = form.get("contact", "")
-    service_id = form.get("service_id", type=int)
-    service = db.session.get(Service, service_id) if service_id else None #dire ko nag end
+    description = form.get("message", "").strip()
+    selected_services = form.getlist("service_ids")
+    uploaded_photos = [photo for photo in request.files.getlist("photos") if photo.filename]
 
     errors = {}
     if not name:
         errors["name"] = "Enter your name."
+    elif len(name) > 100:
+        errors["name"] = "Name must be 100 characters or fewer."
     if not (
         len(contact) == 11
         and contact.startswith("09")
@@ -138,20 +151,92 @@ def join():
         and contact.isdigit()
     ):
         errors["contact"] = "Please enter a valid cellphone number."
-    
-    if service_id not in [s["id"] for s in SERVICES]:
-        errors["service_id"] = "Choose a service."
+
+    service_ids = []
+    try:
+        if not selected_services or any(
+            not value.isascii() or not value.isdecimal()
+            for value in selected_services
+        ):
+            raise ValueError
+        service_ids = list(dict.fromkeys(int(value) for value in selected_services))
+    except ValueError:
+        errors["services"] = "Choose at least one valid service."
+
+    services = (
+        db.session.scalars(db.select(Service).where(Service.id.in_(service_ids))).all()
+        if service_ids
+        else []
+    )
+    if service_ids and len(services) != len(service_ids):
+        errors["services"] = "Choose valid services from the list."
+
+    if any(not photo.mimetype or not photo.mimetype.startswith("image/") for photo in uploaded_photos):
+        errors["photos"] = "Upload image files only."
 
     if errors:
         if "contact" in errors:
             flash("Please enter a valid cellphone number", "danger")
         else:
             flash("Please fix the highlighted fields.", "danger")
-        return render_template("join.html", services=SERVICES, form=form, errors=errors), 400
+        return render_template(
+            "join.html",
+            services=all_services(),
+            form=form,
+            errors=errors,
+            selected_services=selected_services,
+        ), 400
 
+    if db.session.get(Technician, 1) is None:
+        app.logger.error("Cannot create ticket: technician id 1 is not present.")
+        errors["form"] = "Ticketing is temporarily unavailable. Please try again later."
+        return render_template(
+            "join.html",
+            services=all_services(),
+            form=form,
+            errors=errors,
+            selected_services=selected_services,
+        ), 503
 
-    flash(f"You joined the queue. Your ticket is #{number}.", "success")
-    return redirect(url_for("ticket", ticket_id=number))
+    photo_data = [photo.read() for photo in uploaded_photos]
+    try:
+        customer = Customer(name=name, phone_number=contact)
+        db.session.add(customer)
+        db.session.flush()
+
+        new_ticket = Ticket(
+            ticket_code=generate_ticket_code(),
+            status="waiting",
+            description=description or None,
+            customer_id=customer.id,
+            assigned_technician_id=1,
+        )
+        db.session.add(new_ticket)
+        db.session.flush()
+
+        db.session.add_all(
+            ServicesChosen(service_id=service.id, ticket_id=new_ticket.id)
+            for service in services
+        )
+        db.session.add_all(
+            DevicePhoto(photo=data, ticket_id=new_ticket.id)
+            for data in photo_data
+        )
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Failed to save a new customer ticket.")
+        errors["form"] = "We could not save your ticket. Please try again."
+        return render_template(
+            "join.html",
+            services=all_services(),
+            form=form,
+            errors=errors,
+            selected_services=selected_services,
+        ), 500
+
+    flash(f"You joined the queue. Your ticket code is {new_ticket.ticket_code}.", "success")
+    return redirect(url_for("ticket", ticket_id=new_ticket.id))
 
 @app.get("/staff")
 def staff_dashboard():
