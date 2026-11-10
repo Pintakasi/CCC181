@@ -5,6 +5,7 @@ Run it with:
 then open http://127.0.0.1:5000
 """
 import os
+import re
 import secrets
 import string
 
@@ -17,6 +18,12 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
+
+EMAIL_PATTERN = re.compile(
+    r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+"
+    r"@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+    r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+"
+)
 
 load_dotenv()
 
@@ -134,7 +141,12 @@ def join_form():
 def join():
     form = request.form
     name = form.get("name", "").strip()
-    contact = form.get("contact", "")
+    contact_method = form.get("contact_method", "phone")
+    contact = (
+        form.get("email", "").strip()
+        if contact_method == "email"
+        else form.get("contact", "").strip()
+    )
     description = form.get("message", "").strip()
     selected_services = form.getlist("service_ids")
     uploaded_photos = [photo for photo in request.files.getlist("photos") if photo.filename]
@@ -144,7 +156,18 @@ def join():
         errors["name"] = "Enter your name."
     elif len(name) > 100:
         errors["name"] = "Name must be 100 characters or fewer."
-    if not (
+    if contact_method == "email":
+        local_part = contact.partition("@")[0]
+        if (
+            len(contact) > 255
+            or not EMAIL_PATTERN.fullmatch(contact)
+            or len(local_part) > 64
+            or ".." in local_part
+            or local_part.startswith(".")
+            or local_part.endswith(".")
+        ):
+            errors["email"] = "Enter a valid email address."
+    elif contact_method != "phone" or not (
         len(contact) == 11
         and contact.startswith("09")
         and contact.isascii()
@@ -175,7 +198,9 @@ def join():
         errors["photos"] = "Upload image files only."
 
     if errors:
-        if "contact" in errors:
+        if "email" in errors:
+            flash(errors["email"], "danger")
+        elif "contact" in errors:
             flash("Please enter a valid cellphone number", "danger")
         else:
             flash("Please fix the highlighted fields.", "danger")
@@ -200,9 +225,34 @@ def join():
 
     photo_data = [photo.read() for photo in uploaded_photos]
     try:
-        customer = Customer(name=name, phone_number=contact)
-        db.session.add(customer)
-        db.session.flush()
+        if contact_method == "email":
+            normalized_email = contact.lower()
+            customer = db.session.scalar(
+                db.select(Customer)
+                .where(func.lower(Customer.email) == normalized_email)
+                .order_by(Customer.id)
+                .limit(1)
+            )
+        else:
+            normalized_email = None
+            customer = db.session.scalar(
+                db.select(Customer)
+                .where(Customer.phone_number == contact)
+                .order_by(Customer.id)
+                .limit(1)
+            )
+        if customer is None:
+            customer = Customer(
+                name=name,
+                phone_number=contact if contact_method == "phone" else None,
+                email=normalized_email,
+            )
+            db.session.add(customer)
+            db.session.flush()
+        else:
+            customer.name = name
+            if normalized_email is not None:
+                customer.email = normalized_email
 
         new_ticket = Ticket(
             ticket_code=generate_ticket_code(),

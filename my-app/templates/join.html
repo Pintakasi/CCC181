@@ -13,7 +13,7 @@
       {% endif %}
 
       <div class="mb-3">
-        <label for="name" class="form-label">Name</label>
+        <label for="name" class="form-label">Full Name</label>
         <input id="name" name="name" type="text" autocomplete="name" required
                class="form-control {% if errors and errors.name %}is-invalid{% endif %}"
                value="{{ form.get('name', '') }}"
@@ -24,15 +24,29 @@
       </div>
 
       <div class="mb-3">
-        <label for="contact" class="form-label">Cellphone Number</label>
-        <input id="contact" name="contact" type="text" inputmode="numeric"
-               autocomplete="tel" maxlength="11" pattern="09[0-9]{9}" required
-               class="form-control {% if errors and errors.contact %}is-invalid{% endif %}"
-               value="{{ form.get('contact', '') }}"
-               {% if errors and errors.contact %}aria-describedby="contact-error"{% endif %}>
-        {% if errors and errors.contact %}
-          <div id="contact-error" class="invalid-feedback">{{ errors.contact }}</div>
-        {% endif %}
+        <div id="phone-field">
+          <label for="contact" class="form-label">Cellphone Number</label>
+          <input id="contact" name="contact" type="text" inputmode="numeric"
+                 autocomplete="tel" maxlength="11" pattern="09[0-9]{9}"
+                 class="form-control {% if errors and errors.contact %}is-invalid{% endif %}"
+                 value="{{ form.get('contact', '') }}"
+                 {% if errors and errors.contact %}aria-describedby="contact-error"{% endif %}>
+          {% if errors and errors.contact %}
+            <div id="contact-error" class="invalid-feedback">{{ errors.contact }}</div>
+          {% endif %}
+        </div>
+        <div id="email-field" hidden>
+          <label for="email" class="form-label">Email Address</label>
+          <input id="email" name="email" type="email" maxlength="255" autocomplete="email"
+                 class="form-control {% if errors and errors.email %}is-invalid{% endif %}"
+                 value="{{ form.get('email', '') }}">
+        </div>
+        <div class="form-check mt-2">
+          <input id="use-email" name="contact_method" value="email" type="checkbox"
+                 class="form-check-input"
+                 {% if form.get('contact_method') == 'email' %}checked{% endif %}>
+          <label for="use-email" class="form-check-label">Use email instead</label>
+        </div>
       </div>
 
       <div class="mb-3">
@@ -84,4 +98,27 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const useEmail = document.getElementById("use-email");
+  const phoneField = document.getElementById("phone-field");
+  const emailField = document.getElementById("email-field");
+  const phoneInput = document.getElementById("contact");
+  const emailInput = document.getElementById("email");
+
+  function updateContactField() {
+    const emailSelected = useEmail.checked;
+    phoneField.hidden = emailSelected;
+    emailField.hidden = !emailSelected;
+    phoneInput.required = !emailSelected;
+    emailInput.required = emailSelected;
+    phoneInput.disabled = emailSelected;
+    emailInput.disabled = !emailSelected;
+  }
+
+  useEmail.addEventListener("change", updateContactField);
+  updateContactField();
+</script>
 {% endblock %}
