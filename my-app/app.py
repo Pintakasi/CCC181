@@ -5,6 +5,8 @@ Run it with:
 then open http://127.0.0.1:5000
 """
 import os
+import secrets
+import string
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
 
@@ -52,28 +54,6 @@ def seed():
     print("Services are ready.")
 
 
-# Sample data for the demo. A real app would load this from a database later.
-SERVICES = [
-    {"id": 0, "name": "Device Checkup"},
-    {"id": 1, "name": "Screen Replacement"},
-    {"id": 2, "name": "Battery Replacement"},
-    {"id": 3, "name": "Charging Port Repair"},
-    {"id": 4, "name": "LCD and Touchscreen Repair"},
-    {"id": 5, "name": "Camera Repair or Replacement"},
-    {"id": 6, "name": "Speaker and Microphone Repair"},
-    {"id": 7, "name": "Power Button and Volume Button Repair"},
-    {"id": 8, "name": "Water Damage Repair"},
-    {"id": 9, "name": "Motherboard Repair"},
-]
-
-# Each ticket: number, name, contact, service_id, status
-# status is one of: waiting, called, served, no-show
-TICKETS = [
-    {"number": 1, "name": "Theo", "contact": "09099143656", "service_id": 2, "status": "waiting"},
-    {"number": 2, "name": "Jian", "contact": "09353660678", "service_id": 9, "status": "called"},
-    {"number": 3, "name": "Rey", "contact": "09353560634", "service_id": 1, "status": "called"},
-]
-
 
 def people_ahead(ticket):
     return sum(
@@ -85,10 +65,7 @@ def people_ahead(ticket):
 
 @app.route("/")
 def index():
-
-    # render_template looks inside the templates/ folder and passes
-    # keyword arguments to the template as variables.
-    return render_template("index.html", name="Rey", tickets=TICKETS)
+    return render_template("index.html")
 
 
 @app.get("/queue/<int:ticket_id>")
@@ -132,9 +109,16 @@ if __name__ == "__main__":
 
 #Added 
 
+#Retrieves all services ordered by name from database
+def all_services():
+    return db.session.scalars(db.select(Service).order_by(Service.name)).all()
+
+#Serves the join.html when a client requests for GET /join
 @app.get("/join")
 def join_form():
-    return render_template("join.html", services=SERVICES, form={})
+    return render_template("join.html", services=all_services(), form={})
+
+
 
 @app.post("/join")
 def join():
@@ -142,6 +126,7 @@ def join():
     name = form.get("name", "").strip()
     contact = form.get("contact", "")
     service_id = form.get("service_id", type=int)
+    service = db.session.get(Service, service_id) if service_id else None #dire ko nag end
 
     errors = {}
     if not name:
@@ -153,8 +138,7 @@ def join():
         and contact.isdigit()
     ):
         errors["contact"] = "Please enter a valid cellphone number."
-    # if "@" not in email:
-    #     errors["email"] = "Enter a valid email address."
+    
     if service_id not in [s["id"] for s in SERVICES]:
         errors["service_id"] = "Choose a service."
 
@@ -165,14 +149,7 @@ def join():
             flash("Please fix the highlighted fields.", "danger")
         return render_template("join.html", services=SERVICES, form=form, errors=errors), 400
 
-    number = max((ticket["number"] for ticket in TICKETS), default=0) + 1
-    TICKETS.append({
-        "number": number,
-        "name": name,
-        "contact": contact,
-        "service_id": service_id,
-        "status": "waiting",
-    })
+
     flash(f"You joined the queue. Your ticket is #{number}.", "success")
     return redirect(url_for("ticket", ticket_id=number))
 
@@ -222,3 +199,11 @@ def staff_action(ticket_id, action):
     service_id = request.form.get("service_id", type=int)
     redirect_args = {"service_id": service_id} if service_id is not None else {}
     return redirect(url_for("staff_dashboard", **redirect_args))
+
+
+
+#Helper function: Generates generate a cryptographically secure random 8-character string.
+
+def generate_ticket_code():
+    characters = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(characters) for _ in range(8))
