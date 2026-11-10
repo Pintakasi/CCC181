@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import selectinload
 
 from models import Customer, Technician, Service, Ticket, ServicesChosen, DevicePhoto, db
 
@@ -306,46 +307,49 @@ def join():
 @app.get("/staff")
 def staff_dashboard():
     service_id = request.args.get("service_id", type=int)
-    service_ids = {service["id"] for service in SERVICES}
-    if service_id is not None and service_id not in service_ids:
-        abort(404)
-
-    queue = sorted(
-        (ticket for ticket in TICKETS if ticket["status"] in ("waiting", "called")),
-        key=lambda ticket: ticket["number"],
-    )
     if service_id is not None:
-        queue = [ticket for ticket in queue if ticket["service_id"] == service_id]
+        db.get_or_404(Service, service_id)
 
-    waiting_by_service = {
-        service["id"]: sum(
-            ticket["service_id"] == service["id"] and ticket["status"] == "waiting"
-            for ticket in TICKETS
+    queue_query = db.select(Ticket).where(Ticket.status.in_(("waiting", "called")))
+    if service_id is not None:
+        matching_ticket_ids = db.select(ServicesChosen.ticket_id).where(
+            ServicesChosen.service_id == service_id
         )
-        for service in SERVICES
-    }
-    names = {service["id"]: service["name"] for service in SERVICES}
-    next_ticket = next((ticket for ticket in queue if ticket["status"] == "waiting"), None)
+        queue_query = queue_query.where(Ticket.id.in_(matching_ticket_ids))
+
+    queue = db.session.scalars(
+        queue_query.options(
+            selectinload(Ticket.customer),
+            selectinload(Ticket.chosen_services).selectinload(ServicesChosen.service),
+        ).order_by(Ticket.created_at, Ticket.id)
+    ).all()
+    next_ticket = next((ticket for ticket in queue if ticket.status == "waiting"), None)
     return render_template(
         "staff.html",
         queue=queue,
-        services=SERVICES,
-        names=names,
+        services=all_services(),
         selected=service_id,
         next_ticket=next_ticket,
-        waiting_by_service=waiting_by_service,
     )
 
 
 @app.post("/staff/tickets/<int:ticket_id>/<action>")
 def staff_action(ticket_id, action):
-    new_status = {"call": "called", "serve": "served", "no-show": "no-show"}.get(action)
-    ticket_data = next((ticket for ticket in TICKETS if ticket["number"] == ticket_id), None)
-    if ticket_data is None or new_status is None:
+    new_status = {"call": "called", "serve": "completed", "no-show": "no_show"}.get(action)
+    if new_status is None:
         abort(404)
 
-    ticket_data["status"] = new_status
-    flash(f"Ticket #{ticket_id} marked {new_status}.", "info")
+    ticket_data = db.get_or_404(Ticket, ticket_id)
+    ticket_data.status = new_status
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Failed to update ticket %s status.", ticket_id)
+        flash("The ticket status could not be updated. Please try again.", "danger")
+        return redirect(url_for("staff_dashboard"))
+
+    flash(f"Ticket {ticket_data.ticket_code} marked {new_status.replace('_', ' ')}.", "info")
     service_id = request.form.get("service_id", type=int)
     redirect_args = {"service_id": service_id} if service_id is not None else {}
     return redirect(url_for("staff_dashboard", **redirect_args))
