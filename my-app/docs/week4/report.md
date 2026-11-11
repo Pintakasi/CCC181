@@ -1,13 +1,25 @@
 ## 1 Title details:
    App name: Fix Point
+
+
    Setting: Cellphone repair shop
+
+
    Student: Vince Ryan P. Dizon
+   
+   
    Student ID: 2024-2127
+   
+   
    Section: CS3A
+   
+   
    Date: Nov 11, 2026
+   
+   
    PR LINK: 
 
-## Requirements
+## 2 Requirements
 
 I wrote **17 functional requirements** and **7 non-functional requirements**. The MVP includes FR-01, FR-02, FR-03, FR-04, FR-05, FR-07, FR-08, FR-09, and FR-13.
 
@@ -17,7 +29,25 @@ See the [full requirements document](../week3/requirements.md).
 
 
 
-## Schema
+## 3 ERD
+
+![ERD](screenshots/erd.png)
+
+### Relationship sentences
+
+One customer can have many tickets, and each ticket belongs to exactly one customer.
+
+One service can have many tickets, and each ticket uses exactly one service.
+
+One ticket can have many `services_chosen` records, and each record belongs to exactly one ticket. One service can appear in many `services_chosen` records, and each record refers to exactly one service.
+
+One technician can be assigned to many tickets, while each ticket has exactly one assigned technician.
+
+One ticket can have many device photos, and each device photo belongs to exactly one ticket.
+
+See the full schema and relationship notes in [docs/week4/schema.md](schema.md).
+
+## 4 Schema
 
 ![customers](screenshots/customers.png)
 ![technicians](screenshots/technicians.png)
@@ -26,17 +56,17 @@ See the [full requirements document](../week3/requirements.md).
 ![device_photos](screenshots/device_photos.png)
 
 
-## Design decisions
+## 5 Design decisions
 
 1. **Allow email instead of requiring a phone number.** Rey's phone is broken, and he uses a laptop with Wi-Fi or a hotspot. Letting him provide email as his contact method means he can still join the queue (FR-01) without a working phone.
 2. **Use a `services_chosen` table to connect tickets and services.** A repair visit may need more than one service. Keeping these associations in a separate table lets a ticket include multiple services, supporting the service selection and display in FR-01 and FR-02.
 3. **Store device photos separately from tickets and link them to the ticket.** FR-17 lets customers send a picture of their device's state and concern for Winston to assess. A separate `device_photos` table stores the image and associates it with the relevant ticket.
 
-## Self-review
+## 6 Self-review
 
 I found two main problems in my schema: I had missed the `description` column needed to capture the customer's concern in FR-17, and a `service_id` directly on `tickets` would limit each ticket to one service. I added `description` to `tickets` and created a `services_chosen` table with `ticket_id` and `service_id`, allowing one ticket to include multiple services. I also updated the schema's table list, constraints, delete rules, relationship sentences, and ERD.
 
-## Migrations
+## 7 Migrations
 
 - [`697400571e57_initial_tables.py`](../../migrations/versions/697400571e57_initial_tables.py): Creates the initial customers, services, technicians, tickets, device photos, and chosen-services tables with their constraints and relationships.
 - [`20261110_add_customer_email.py`](../../migrations/versions/20261110_add_customer_email.py): Adds an optional email column to customers.
@@ -47,7 +77,7 @@ I found two main problems in my schema: I had missed the `description` column ne
 
 
 
-## CRUD
+## 8 CRUD
 
 Routes below are grouped by the database operation they perform. Service-management routes do not have a dedicated functional requirement ID in my requirements list.
 
@@ -130,7 +160,7 @@ Routes below are grouped by the database operation they perform. Service-managem
 
 ![](screenshots/del2.png)
 
-## Validation
+## 9 Validation
 
 Validation covered browser-side form requirements, Flask rejection of invalid submissions, PostgreSQL constraints, and a source check for SQL built with f-strings. The browser requires a name, contact method, and service; Flask returned `400 BAD REQUEST` without saving tickets for empty or overlong names, invalid email, and inactive services. PostgreSQL probes confirmed the foreign-key, check, unique, not-null, and delete-restrict constraints; a valid ticket insert also confirmed that the database generates its ID and creation time. The SQL f-string check found no matches.
 
@@ -139,7 +169,7 @@ The most useful PostgreSQL error was the `ON DELETE RESTRICT` response when tryi
 See the [full validation tests and results](validation.md).
 
 
-## Persistence
+## 10  Persistence
 
 ### Before Restart
 
@@ -154,10 +184,10 @@ See the [full validation tests and results](validation.md).
 ![Staff Dashboard](screenshots/after-staff-dashboard.png)
 
 
-### Reflection
+## 11 Reflection
 
 The hardest part this week was keeping the database schema, SQLAlchemy models, and Alembic migrations consistent as the design changed—for example, allowing email-only customers and supporting multiple services on one ticket. The requirement I found hardest to make testable was **NFR-03**, which says the Join, My Place, and staff queue pages must load within two seconds with 10 concurrent users on a mobile connection. It has measurable limits, but testing it reliably requires a repeatable way to simulate both the users and the mobile network. A report Winston would find useful is the daily number of tickets for each service grouped by outcome—completed, no-show, or left—so he can see which services have the most customers who leave before being served. I will write the query for this report in Week 5.
 
-## Declaration
+## 12 Declaration
 
 Used AI as an assistant in implementing features.
