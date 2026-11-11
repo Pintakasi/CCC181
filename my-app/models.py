@@ -11,7 +11,7 @@ class Customer(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-    phone_number = db.Column(db.String(15), nullable=True)
+    phone_number = db.Column(db.String(11), nullable=True)
     email = db.Column(db.String(255), nullable=True)
 
     tickets = db.relationship("Ticket", back_populates="customer", cascade="all, delete-orphan")
