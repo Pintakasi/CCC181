@@ -32,7 +32,7 @@
 | FR-14 | Assigning a customer to a technician(maybe Winston hires an assistant) & Customers can choose a preffered technician| Could |**Yes**| LATER |
 | FR-15 | In join screen, the customers can see current number of people waiting  | Could |**No**| LATER |
 |FR-16| System auto notifies the customer when called via SMS |Won't|**Yes**| --------  |
-|★FR-17| Customer can send picture about their device’s state and concern | Must | **Yes** | This Week |
+|★FR-17| Customer can send picture about their device’s state and concern | Must | **Yes** | Built Week4 |
 
 ### Non-functional requirements
 
