@@ -1,6 +1,6 @@
 """Change phone_number length to 11.
 
-Revision ID: 20261111_customer_phone_number_length
+Revision ID: 20261111_phone_length
 Revises: 20261110_email_only_customers
 Create Date: 2026-11-11
 """
@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "20261111_customer_phone_number_length"
+revision = "20261111_phone_length"
 down_revision = "20261110_email_only_customers"
 branch_labels = None
 depends_on = None
