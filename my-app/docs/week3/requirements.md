@@ -23,12 +23,12 @@
 | FR-05 | The technician can mark a ticket as no-show(Customer did not arrive) or Served/Completed | Must |**Yes**| Built(Week3)|
 | FR-06 | The technician can Filter Tickets by services | Must |**No**| Built(Week3) |
 | FR-07 | The technician can see all the customer's Ticket ID, Name, Service, and Status  | Must |**Yes**| Built(Week3) |
-|★FR-08|Technician can manually add a walk-in customer to the queue|Must|**Yes**|This Week|
-|★FR-09|Customer can re-access "My Place" by their Ticket ID.|Must|**No**|This Week|
-|FR-10|Customer can see if the shop is open Today|Must|**No**|This Week|
+|★FR-08|Technician can manually add a walk-in customer to the queue|Must|**Yes**|LATER|
+|★FR-09|Customer can re-access "My Place" by their Ticket ID.|Must|**No**|LATER|
+|FR-10|Customer can see if the shop is open Today|Must|**No**|LATER|
 |FR-11|Customer can see shop address in Join|Must|**No**|LATER|
 |FR-12|Technician can see waiting count|Must|**No**|LATER|
-|FR-13|Technician can login using an account|Must|**Yes**|This Week|
+|FR-13|Technician can login using an account|Must|**Yes**|LATER|
 | FR-14 | Assigning a customer to a technician(maybe Winston hires an assistant) & Customers can choose a preffered technician| Could |**Yes**| LATER |
 | FR-15 | In join screen, the customers can see current number of people waiting  | Could |**No**| LATER |
 |FR-16| System auto notifies the customer when called via SMS |Won't|**Yes**| --------  |
