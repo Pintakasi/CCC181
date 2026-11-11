@@ -64,7 +64,7 @@
               <div class="col-12 col-sm-6">
                 <label class="service-option w-100">
                   <input class="service-option-input" type="checkbox" name="service_ids"
-                         value="{{ s.id }}" {% if loop.first %}required{% endif %}
+                         value="{{ s.id }}"
                          {% if s.id|string in selected_services|default([]) %}checked{% endif %}>
                   <span class="service-option-card">
                     <span>
@@ -113,6 +113,7 @@
   const emailField = document.getElementById("email-field");
   const phoneInput = document.getElementById("contact");
   const emailInput = document.getElementById("email");
+  const serviceInputs = Array.from(document.querySelectorAll('input[name="service_ids"]'));
 
   function updateContactField() {
     const emailSelected = useEmail.checked;
@@ -124,7 +125,16 @@
     emailInput.disabled = !emailSelected;
   }
 
+  function updateServiceRequirement() {
+    const requiredInput = serviceInputs.find((input) => input.checked) ?? serviceInputs[0];
+    serviceInputs.forEach((input) => {
+      input.required = input === requiredInput;
+    });
+  }
+
   useEmail.addEventListener("change", updateContactField);
+  serviceInputs.forEach((input) => input.addEventListener("change", updateServiceRequirement));
   updateContactField();
+  updateServiceRequirement();
 </script>
 {% endblock %}
