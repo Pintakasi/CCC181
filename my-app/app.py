@@ -49,7 +49,7 @@ def local_time(value):
 
 @app.cli.command("seed")
 def seed():
-    """Add the starting repair services if they are not there yet."""
+    """Add the starting repair services and technician if they are not there yet."""
     starting = [
         ("Device Checkup", 15),
         ("Screen Replacement", 60),
@@ -66,8 +66,16 @@ def seed():
         exists = db.session.scalar(db.select(Service).filter_by(name=name))
         if exists is None:
             db.session.add(Service(name=name, estimated_duration=minutes))
+    if db.session.scalar(db.select(Technician).limit(1)) is None:
+        db.session.add(
+            Technician(
+                full_name="Winston Lee",
+                username="winston",
+                password_hash="hashed_password_1",
+            )
+        )
     db.session.commit()
-    print("Services are ready.")
+    print("Services and technician are ready.")
 
 
 
