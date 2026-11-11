@@ -15,3 +15,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 memory.md
+
+#Environment Files
+.env
+
+#My personal
+mynotes.txt
+schema.sql

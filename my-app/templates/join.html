@@ -6,10 +6,16 @@
   <div class="col-12 col-md-8 col-lg-6">
     <h1 class="h3 mb-3">Join the queue</h1>
 
-    <form method="post" action="{{ url_for('join') }}" novalidate id="join-form">
+    <form method="post" action="{{ url_for('join') }}" enctype="multipart/form-data"
+          id="join-form">
+      {% if errors and errors.form %}
+        <div class="alert alert-danger" role="alert">{{ errors.form }}</div>
+      {% endif %}
+
       <div class="mb-3">
-        <label for="name" class="form-label">Name</label>
+        <label for="name" class="form-label">Full Name</label>
         <input id="name" name="name" type="text" autocomplete="name" required
+               maxlength="100"
                class="form-control {% if errors and errors.name %}is-invalid{% endif %}"
                value="{{ form.get('name', '') }}"
                {% if errors and errors.name %}aria-describedby="name-error"{% endif %}>
@@ -19,31 +25,78 @@
       </div>
 
       <div class="mb-3">
-        <label for="contact" class="form-label">Cellphone Number</label>
-        <input id="contact" name="contact" type="text" inputmode="numeric"
-               autocomplete="tel" maxlength="11" pattern="09[0-9]{9}" required
-               class="form-control {% if errors and errors.contact %}is-invalid{% endif %}"
-               value="{{ form.get('contact', '') }}"
-               {% if errors and errors.contact %}aria-describedby="contact-error"{% endif %}>
-        {% if errors and errors.contact %}
-          <div id="contact-error" class="invalid-feedback">{{ errors.contact }}</div>
-        {% endif %}
+        <div id="phone-field">
+          <label for="contact" class="form-label">Cellphone Number</label>
+          <input id="contact" name="contact" type="text" inputmode="numeric"
+                 autocomplete="tel" maxlength="11" pattern="09[0-9]{9}"
+                 class="form-control {% if errors and errors.contact %}is-invalid{% endif %}"
+                 value="{{ form.get('contact', '') }}"
+                 {% if errors and errors.contact %}aria-describedby="contact-error"{% endif %}>
+          {% if errors and errors.contact %}
+            <div id="contact-error" class="invalid-feedback">{{ errors.contact }}</div>
+          {% endif %}
+        </div>
+        <div id="email-field" hidden>
+          <label for="email" class="form-label">Email Address</label>
+          <input id="email" name="email" type="email" maxlength="255" autocomplete="email"
+                 class="form-control {% if errors and errors.email %}is-invalid{% endif %}"
+                 value="{{ form.get('email', '') }}">
+        </div>
+        <div class="form-check mt-2">
+          <input id="use-email" name="contact_method" value="email" type="checkbox"
+                 class="form-check-input"
+                 {% if form.get('contact_method') == 'email' %}checked{% endif %}>
+          <label for="use-email" class="form-check-label">Use email instead</label>
+        </div>
       </div>
 
-      {# Add the email field (type="email", autocomplete="email") the same way #}
+      <div class="mb-3">
+        <fieldset>
+          <legend class="form-label fs-6">Services</legend>
+          <p class="form-text mt-0">Choose one or more services.</p>
+          {% if not services %}
+            <p class="alert alert-info py-2" role="status">
+              No services are currently available. Please contact staff.
+            </p>
+          {% endif %}
+          <div class="row g-2">
+            {% for s in services %}
+              <div class="col-12 col-sm-6">
+                <label class="service-option w-100">
+                  <input class="service-option-input" type="checkbox" name="service_ids"
+                         value="{{ s.id }}"
+                         {% if s.id|string in selected_services|default([]) %}checked{% endif %}>
+                  <span class="service-option-card">
+                    <span>
+                      <span class="d-block fw-semibold">{{ s.name }}</span>
+                      <span class="small text-body-secondary">{{ s.estimated_duration }} min</span>
+                    </span>
+                    <span class="service-option-check" aria-hidden="true">✓</span>
+                  </span>
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+          {% if errors and errors.services %}
+            <div class="text-danger small mt-2" role="alert">{{ errors.services }}</div>
+          {% endif %}
+        </fieldset>
+      </div>
 
       <div class="mb-3">
-        <label for="service_id" class="form-label">Service</label>
-        <select id="service_id" name="service_id" required
-                class="form-select {% if errors and errors.service_id %}is-invalid{% endif %}">
-          <option value="">Choose a service…</option>
-          {% for s in services %}
-            <option value="{{ s.id }}"
-              {% if form.get('service_id') == s.id|string %}selected{% endif %}>{{ s.name }}</option>
-          {% endfor %}
-        </select>
-        {% if errors and errors.service_id %}
-          <div class="invalid-feedback">{{ errors.service_id }}</div>
+        <label for="message" class="form-label">Message <span class="text-body-secondary">(optional)</span></label>
+        <textarea id="message" name="message" rows="3" class="form-control"
+                  placeholder="Tell us a little about the issue">{{ form.get('message', '') }}</textarea>
+      </div>
+
+      <div class="mb-4">
+        <label for="photos" class="form-label">Device photos <span class="text-body-secondary">(optional)</span></label>
+        <input id="photos" name="photos" type="file" accept="image/*" multiple
+               class="form-control {% if errors and errors.photos %}is-invalid{% endif %}"
+               aria-describedby="photos-help{% if errors and errors.photos %} photos-error{% endif %}">
+        <div id="photos-help" class="form-text">You can select multiple images.</div>
+        {% if errors and errors.photos %}
+          <div id="photos-error" class="invalid-feedback">{{ errors.photos }}</div>
         {% endif %}
       </div>
 
@@ -51,4 +104,37 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const useEmail = document.getElementById("use-email");
+  const phoneField = document.getElementById("phone-field");
+  const emailField = document.getElementById("email-field");
+  const phoneInput = document.getElementById("contact");
+  const emailInput = document.getElementById("email");
+  const serviceInputs = Array.from(document.querySelectorAll('input[name="service_ids"]'));
+
+  function updateContactField() {
+    const emailSelected = useEmail.checked;
+    phoneField.hidden = emailSelected;
+    emailField.hidden = !emailSelected;
+    phoneInput.required = !emailSelected;
+    emailInput.required = emailSelected;
+    phoneInput.disabled = emailSelected;
+    emailInput.disabled = !emailSelected;
+  }
+
+  function updateServiceRequirement() {
+    const requiredInput = serviceInputs.find((input) => input.checked) ?? serviceInputs[0];
+    serviceInputs.forEach((input) => {
+      input.required = input === requiredInput;
+    });
+  }
+
+  useEmail.addEventListener("change", updateContactField);
+  serviceInputs.forEach((input) => input.addEventListener("change", updateServiceRequirement));
+  updateContactField();
+  updateServiceRequirement();
+</script>
 {% endblock %}

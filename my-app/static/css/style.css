@@ -59,6 +59,62 @@ h2 { color: var(--teal); }
 
 code { background: #ECE8DE; padding: 0 0.3rem; border-radius: 4px; }
 
+.service-option {
+  display: block;
+  position: relative;
+  cursor: pointer;
+}
+
+.service-option-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.service-option-card {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #D7DCE3;
+  border-radius: 0.75rem;
+  background: #FFFDF8;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.service-option-input:checked + .service-option-card {
+  border-color: var(--teal);
+  background: #EAF4F3;
+  box-shadow: 0 0 0 2px rgb(45 111 120 / 15%);
+}
+
+.service-option-input:focus-visible + .service-option-card {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.service-option-check {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #AAB2BF;
+  border-radius: 0.4rem;
+  color: transparent;
+  background: white;
+  font-weight: 700;
+}
+
+.service-option-input:checked + .service-option-card .service-option-check {
+  border-color: var(--teal);
+  color: white;
+  background: var(--teal);
+}
+
 footer {
   text-align: center;
   color: #5A6272;
