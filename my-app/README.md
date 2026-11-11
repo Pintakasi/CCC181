@@ -43,37 +43,22 @@ my-app/
 | `POST` | `/staff/tickets/<ticket_id>/<action>` | Update a ticket with `call`, `serve`, or `no-show` |
 | `GET` | `/hello` | Return a simple Flask greeting |
 
-## Run locally
+## Run the app
 
-Run these commands from the `my-app` directory.
-
-Create a virtual environment:
+Requirements: Docker with Compose and Python. From the `my-app` directory, run:
 
 ```bash
-python -m venv .venv
-```
-
-Activate it:
-
-```bash
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-# Windows Command Prompt
-.venv\Scripts\activate.bat
-```
-
-Install dependencies and start the development server:
-
-```bash
+cp .env.example .env
+docker compose up -d
 pip install -r requirements.txt
+flask --app app db upgrade
+flask --app app seed
 flask --app app run --debug
 ```
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The debug server is for local development only; do not use it to deploy the app publicly.
+The commands create the local environment file, start PostgreSQL, install the Python dependencies, apply database migrations, seed the starting services and technician, and launch Flask. Open [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
+The Flask debug server is for local development only; do not use it to deploy the app publicly. To stop PostgreSQL, run `docker compose down` from the `my-app` directory.
 
 ## Prototype limitations
 
