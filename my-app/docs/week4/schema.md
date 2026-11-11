@@ -74,7 +74,7 @@
 
 ## 2d. Draw the ERD
 
-![ERD](screenshots/erd.png).
+![ERD](erd.png).
 
 ### Relationship sentences
 
