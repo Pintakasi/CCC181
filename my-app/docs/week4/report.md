@@ -31,7 +31,7 @@ See the [full requirements document](../week3/requirements.md).
 
 ## 3 ERD
 
-![ERD](screenshots/erd.png)
+![ERD](erd.png)
 
 ### Relationship sentences
 
