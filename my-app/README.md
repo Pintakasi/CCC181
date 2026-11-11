@@ -89,3 +89,9 @@ See [`docs/week3/`](docs/week3/) for the personas, wireframes, design feedback, 
 
 ##Requirements
 [`docs/requirements.md/`](docs/week3/requirements.md)
+
+
+
+
+NOTES:
+   Staff login comes in Week 11.

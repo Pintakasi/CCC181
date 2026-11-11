@@ -7,7 +7,7 @@
     <h1 class="h3 mb-3">Join the queue</h1>
 
     <form method="post" action="{{ url_for('join') }}" enctype="multipart/form-data"
-          novalidate id="join-form">
+          id="join-form">
       {% if errors and errors.form %}
         <div class="alert alert-danger" role="alert">{{ errors.form }}</div>
       {% endif %}
@@ -15,6 +15,7 @@
       <div class="mb-3">
         <label for="name" class="form-label">Full Name</label>
         <input id="name" name="name" type="text" autocomplete="name" required
+               maxlength="100"
                class="form-control {% if errors and errors.name %}is-invalid{% endif %}"
                value="{{ form.get('name', '') }}"
                {% if errors and errors.name %}aria-describedby="name-error"{% endif %}>
