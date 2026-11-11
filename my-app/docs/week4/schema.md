@@ -33,8 +33,8 @@
 | ----- | ----- |
 | `tickets` | id, ticket_code, status, created_at, called_at, service_id, customer_id, assigned_technician_id |
 | `device_photos` | id, photo, ticket_id |
-| `services` | id, name, estimated_duration |
-| `customers` | id, name, phone_number |
+| `services` | id, name, estimated_duration, active |
+| `customers` | id, name, phone_number, email |
 | `technicians` | id, full_name, username, password_hash |
 | `services_chosen` | id, service_id, ticket_id |
 
@@ -59,7 +59,8 @@
 | `services` | `estimated_duration` | `integer` | `NOT NULL, CHECK (estimated_duration > 0)` | Stores a positive estimated duration in minutes as a number |
 | `customers` | `id` | `integer GENERATED ALWAYS AS IDENTITY` | `PRIMARY KEY` | Database-generated identifier for each customer |
 | `customers` | `name` | `varchar(100)` | `NOT NULL` | A customer name is required to create a ticket |
-| `customers` | `phone_number` | `varchar(15)` | `NOT NULL` | Required contact detail; text preserves leading zeros and symbols used in phone numbers |
+| `customers` | `phone_number` | `varchar(15)` | `NULLABLE` | Required contact detail; text preserves leading zeros and symbols used in phone numbers |
+| `customers` | `email` | `varchar(255)` | `NULLABLE` | Customer can either use email or phone number as contact detail |
 | `technicians` | `id` | `integer GENERATED ALWAYS AS IDENTITY` | `PRIMARY KEY` | Database-generated identifier for each technician |
 | `technicians` | `full_name` | `varchar(100)` | `NOT NULL` | A technician's name is required |
 | `technicians` | `username` | `varchar(50)` | `NOT NULL UNIQUE` | Requires a login name that is unique to each technician |
